@@ -46,7 +46,7 @@ You do not need Python installed to run the application. Simply download the sta
 ### Option B: Run from Source Code
 1. Clone this repository:
    ```bash
-   git clone https://github.com/Theobrq/EveryClicker.git
+   git clone https://github.com/TheoOrigin/EveryClicker.git
    cd EveryClicker
    ```
 2. Install dependencies:
