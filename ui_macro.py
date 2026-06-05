@@ -85,6 +85,8 @@ class ui_macro_frame(ctk.CTkFrame):
         
         self.combo_macros = ctk.CTkComboBox(self.card_save, values=[], width=280, command=self.on_macro_selected)
         self.combo_macros.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="w")
+        self.combo_macros_default_fg = self.combo_macros.cget("fg_color")
+        self.combo_macros._entry.bind("<Escape>", lambda e: self.cancel_macro_creation())
         
         self.btn_save_macro = ctk.CTkButton(self.card_save, text="Sauvegarder", width=135, fg_color="#27ae60", hover_color="#219653", command=self.on_save_macro_clicked)
         self.btn_save_macro.grid(row=2, column=1, padx=5, pady=(0, 5), sticky="w")
@@ -183,6 +185,15 @@ class ui_macro_frame(ctk.CTkFrame):
             self.combo_macros.set("")
 
     def on_macro_selected(self, name):
+        t = self.app.settings_manager.get_text
+        if name == t("new_item"):
+            self.combo_macros.set("")
+            self.combo_macros.configure(fg_color=("#e0e0e0", "#404040"))
+            self.combo_macros._entry.focus()
+            return
+            
+        self.combo_macros.configure(fg_color=self.combo_macros_default_fg)
+        
         macros = self.app.settings_manager.get_macros()
         macro = macros.get(name, [])
         if macro:
@@ -190,23 +201,31 @@ class ui_macro_frame(ctk.CTkFrame):
             self.engine.actions = macro
             self.refresh_texts()
 
+    def cancel_macro_creation(self):
+        self.combo_macros.configure(fg_color=self.combo_macros_default_fg)
+        self.refresh_macros_combo()
+
     def on_save_macro_clicked(self):
         t = self.app.settings_manager.get_text
         if not self.recorded_events:
             self.app.lbl_warning.configure(text=t("macro_err_no_actions"))
             return
             
-        dialog = ctk.CTkInputDialog(text=t("macro_lbl_macro_name"), title="Macro")
-        name = dialog.get_input()
-        if name:
-            self.app.settings_manager.add_macro(name, self.recorded_events)
-            self.app.clear_warning()
-            self.refresh_macros_combo()
-            self.combo_macros.set(name)
+        name = self.combo_macros.get().strip()
+        if not name or name == t("new_item"):
+            self.app.lbl_warning.configure(text=t("macro_err_name_empty"))
+            return
+            
+        self.app.settings_manager.add_macro(name, self.recorded_events)
+        self.app.clear_warning()
+        self.refresh_macros_combo()
+        self.combo_macros.set(name)
+        self.combo_macros.configure(fg_color=self.combo_macros_default_fg)
 
     def on_delete_macro_clicked(self):
         name = self.combo_macros.get()
-        if name:
+        t = self.app.settings_manager.get_text
+        if name and name != t("new_item"):
             self.app.settings_manager.delete_macro(name)
             self.recorded_events = []
             self.engine.actions = []
