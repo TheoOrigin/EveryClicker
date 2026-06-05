@@ -133,7 +133,23 @@ TRANSLATIONS = {
         "macro_err_fixed_delay": "Erreur : Le délai fixe doit être supérieur à 0 !",
         "macro_lbl_status_recording": "Enregistrement en cours... Pressez '{hotkey}' pour arrêter.",
         "macro_lbl_status_active_cycles": "Lecture macro en cours... ({cycles} cycles restants)",
-        "macro_lbl_status_active_inf": "Lecture macro en cours... (Infini)"
+        "macro_lbl_status_active_inf": "Lecture macro en cours... (Infini)",
+        
+        # Silent section
+        "tab_silent": "Silencieux",
+        "sec_interval_min": "2. INTERVALLE MINIMUM (A)",
+        "sec_interval_max": "3. INTERVALLE MAXIMUM (B)",
+        "sec_random_dist": "4. DISTRIBUTION DE L'ALÉATOIRE",
+        "lbl_rand_type": "Type de Random :",
+        "rand_uniform": "Totalement Aléatoire",
+        "rand_biased": "Biaisé (Triché)",
+        "lbl_bias_split": "Seuil de coupure (C) :",
+        "lbl_bias_percent": "Pourcentage (P) :",
+        "lbl_bias_direction": "Zone ciblée :",
+        "bias_above": "Au-dessus du seuil",
+        "bias_below": "En-dessous du seuil",
+        "status_active_silent": "Statut : ACTIF (Silencieux)",
+        "sec_stop_silent": "5. CONDITION D'ARRÊT"
     },
     "en": {
         "title": "EveryClicker",
@@ -204,7 +220,23 @@ TRANSLATIONS = {
         "macro_err_fixed_delay": "Error: Fixed delay must be greater than 0!",
         "macro_lbl_status_recording": "Recording... Press '{hotkey}' to stop.",
         "macro_lbl_status_active_cycles": "Playing macro... ({cycles} cycles remaining)",
-        "macro_lbl_status_active_inf": "Playing macro... (Infinite)"
+        "macro_lbl_status_active_inf": "Playing macro... (Infinite)",
+        
+        # Silent section
+        "tab_silent": "Silent",
+        "sec_interval_min": "2. MINIMUM INTERVAL (A)",
+        "sec_interval_max": "3. MAXIMUM INTERVAL (B)",
+        "sec_random_dist": "4. RANDOM DISTRIBUTION",
+        "lbl_rand_type": "Random Type:",
+        "rand_uniform": "Fully Random",
+        "rand_biased": "Biased (Cheated)",
+        "lbl_bias_split": "Split threshold (C):",
+        "lbl_bias_percent": "Percentage (P):",
+        "lbl_bias_direction": "Targeted area:",
+        "bias_above": "Above threshold",
+        "bias_below": "Below threshold",
+        "status_active_silent": "Status: ACTIVE (Silent)",
+        "sec_stop_silent": "5. STOP CONDITION"
     },
     "es": {
         "title": "EveryClicker",
@@ -275,7 +307,23 @@ TRANSLATIONS = {
         "macro_err_fixed_delay": "Error: ¡El retraso fijo debe ser mayor que 0!",
         "macro_lbl_status_recording": "Grabando... Presione '{hotkey}' para detener.",
         "macro_lbl_status_active_cycles": "Reproduciendo macro... ({cycles} ciclos restantes)",
-        "macro_lbl_status_active_inf": "Reproduciendo macro... (Infinito)"
+        "macro_lbl_status_active_inf": "Reproduciendo macro... (Infinito)",
+        
+        # Silent section
+        "tab_silent": "Silencioso",
+        "sec_interval_min": "2. INTERVALO MÍNIMO (A)",
+        "sec_interval_max": "3. INTERVALO MÁXIMO (B)",
+        "sec_random_dist": "4. DISTRIBUCIÓN DEL RANDOM",
+        "lbl_rand_type": "Tipo de Random:",
+        "rand_uniform": "Totalmente Aleatorio",
+        "rand_biased": "Sesgado (Con trampa)",
+        "lbl_bias_split": "Límite de corte (C):",
+        "lbl_bias_percent": "Porcentaje (P):",
+        "lbl_bias_direction": "Zona orientada:",
+        "bias_above": "Por encima del límite",
+        "bias_below": "Por debajo del límite",
+        "status_active_silent": "Estado: ACTIVO (Silencioso)",
+        "sec_stop_silent": "5. CONDICIÓN DE PARADA"
     }
 }
 
@@ -320,7 +368,24 @@ class SettingsManager:
                     "duration_s": 0
                 }
             ],
-            "macros": {}
+            "macros": {},
+            "silent": {
+                "mode": "mouse",
+                "button": "left",
+                "double": False,
+                "keyboard_vk": 0x20,
+                "min_interval_ms": 10.0,
+                "max_interval_ms": 100.0,
+                "bias_mode": "uniform",
+                "bias_split_ms": 70.0,
+                "bias_percent": 70,
+                "bias_direction": "above",
+                "stop_mode": "Infini",
+                "cycles": 100,
+                "duration_h": 0,
+                "duration_m": 10,
+                "duration_s": 0
+            }
         }
         self.load()
 

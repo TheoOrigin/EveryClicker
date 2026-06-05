@@ -17,6 +17,15 @@ class ClickerEngine:
         self.keyboard_vk = 0x20  # Space
         self.interval_ms = 100.0
         
+        # Silent/Randomized Configurations
+        self.random_mode = False
+        self.min_interval_ms = 10.0
+        self.max_interval_ms = 100.0
+        self.bias_mode = "uniform"  # "uniform" or "biased"
+        self.bias_split_ms = 70.0
+        self.bias_percent = 70
+        self.bias_direction = "above"  # "above" or "below"
+        
         # Stopping conditions
         self.duration_sec = None
         self.max_clicks = None
@@ -61,7 +70,7 @@ class ClickerEngine:
             self.start()
 
     def _loop(self):
-        interval_sec = self.interval_ms / 1000.0
+        import random
         end_time = (self.start_perf_time + self.duration_sec) if self.duration_sec is not None else None
 
         while self.active:
@@ -86,6 +95,35 @@ class ClickerEngine:
                 except:
                     pass
                 break
+
+            # Calculate interval for this click
+            if self.random_mode:
+                min_sec = self.min_interval_ms / 1000.0
+                max_sec = self.max_interval_ms / 1000.0
+                if min_sec > max_sec:
+                    min_sec, max_sec = max_sec, min_sec
+                
+                if self.bias_mode == "biased":
+                    split_sec = self.bias_split_ms / 1000.0
+                    split_sec = max(min_sec, min(max_sec, split_sec))
+                    
+                    r = random.random()
+                    percent_val = self.bias_percent / 100.0
+                    
+                    if r < percent_val:
+                        if self.bias_direction == "above":
+                            interval_sec = random.uniform(split_sec, max_sec)
+                        else:
+                            interval_sec = random.uniform(min_sec, split_sec)
+                    else:
+                        if self.bias_direction == "above":
+                            interval_sec = random.uniform(min_sec, split_sec)
+                        else:
+                            interval_sec = random.uniform(split_sec, max_sec)
+                else:
+                    interval_sec = random.uniform(min_sec, max_sec)
+            else:
+                interval_sec = self.interval_ms / 1000.0
 
             loop_start = time.perf_counter()
 
