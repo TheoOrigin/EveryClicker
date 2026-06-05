@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 import customtkinter as ctk
 import time
@@ -22,11 +23,20 @@ class EveryClickerApp(ctk.CTk):
         self.geometry("740x670")
         self.resizable(True, True)
         self.minsize(740, 670)
+        
+        # Path resolver for PyInstaller standalone bundle
+        def get_resource_path(relative_path):
+            if hasattr(sys, '_MEIPASS'):
+                return os.path.join(sys._MEIPASS, relative_path)
+            return os.path.join(os.path.abspath("."), relative_path)
+            
         try:
-            if os.path.exists("logo.ico"):
-                self.iconbitmap("logo.ico")
-            elif os.path.exists("logo.png"):
-                self.icon_photo = tk.PhotoImage(file="logo.png")
+            logo_ico = get_resource_path("logo.ico")
+            logo_png = get_resource_path("logo.png")
+            if os.path.exists(logo_ico):
+                self.iconbitmap(logo_ico)
+            elif os.path.exists(logo_png):
+                self.icon_photo = tk.PhotoImage(file=logo_png)
                 self.iconphoto(False, self.icon_photo)
         except Exception as e:
             print(f"Impossible de charger l'icône de l'application : {e}")
