@@ -92,7 +92,7 @@ class EveryClickerApp(ctk.CTk):
         self.btn_nav_macro.pack(pady=6, padx=20, fill="x")
         
         # Author signature footer at the very bottom
-        self.lbl_author = ctk.CTkLabel(self.sidebar_frame, text="@stala", text_color="#3498db", font=ctk.CTkFont(size=12, weight="bold"))
+        self.lbl_author = ctk.CTkLabel(self.sidebar_frame, text="@TheoOrigin", text_color="#3498db", font=ctk.CTkFont(size=12, weight="bold"))
         self.lbl_author.pack(side="bottom", pady=(5, 20))
         
         # Status Panel in Sidebar (moved here to save height)

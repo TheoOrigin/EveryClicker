@@ -81,4 +81,4 @@ python -m PyInstaller --onefile --noconsole --icon=logo.ico --add-data "logo.ico
 
 ## 📜 License
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-Developed with 💙 by **@stala**.
+Developed by **@TheoOrigin**.
