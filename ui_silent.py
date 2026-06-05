@@ -115,7 +115,7 @@ class SilentClickerFrame(ctk.CTkFrame):
         
         self.lbl_rand_type = ctk.CTkLabel(self.card_rand_dist, text="Type de Random:")
         self.lbl_rand_type.grid(row=1, column=0, padx=(15, 5), pady=4, sticky="w")
-        self.btn_segmented_rand = ctk.CTkSegmentedButton(self.card_rand_dist, values=["Totalement Aléatoire", "Biaisé (Triché)"], command=self.on_bias_mode_changed)
+        self.btn_segmented_rand = ctk.CTkSegmentedButton(self.card_rand_dist, values=["Totalement Aléatoire", "Pondéré"], command=self.on_bias_mode_changed)
         self.btn_segmented_rand.grid(row=1, column=1, columnspan=4, padx=5, pady=4, sticky="ew")
         
         # Sub-frame for biased inputs
@@ -326,6 +326,7 @@ class SilentClickerFrame(ctk.CTkFrame):
             self.entry_seconds.insert(0, str(cfg.get("duration_s", 0)))
             
         self.on_stop_mode_changed(self.btn_segmented_stop.get())
+        self.update_split_slider_bounds()
 
     def save_settings(self):
         t = self.app.settings_manager.get_text
@@ -360,9 +361,21 @@ class SilentClickerFrame(ctk.CTkFrame):
         cfg["bias_mode"] = "uniform" if self.btn_segmented_rand.get() in [t("rand_uniform"), "Totalement Aléatoire", "Fully Random", "Totalmente Aleatorio"] else "biased"
         
         try:
-            cfg["bias_split_ms"] = float(self.entry_bias_split.get())
+            split_ms = float(self.entry_bias_split.get())
         except:
-            cfg["bias_split_ms"] = 70.0
+            split_ms = 70.0
+            
+        min_ms = cfg["min_interval_ms"]
+        max_ms = cfg["max_interval_ms"]
+        if min_ms > max_ms:
+            min_ms, max_ms = max_ms, min_ms
+            
+        split_ms = min(max_ms, max(min_ms, split_ms))
+        cfg["bias_split_ms"] = split_ms
+        
+        self.entry_bias_split.delete(0, "end")
+        self.entry_bias_split.insert(0, f"{split_ms:.1f}")
+        self.update_cps_display("split")
             
         try:
             cfg["bias_percent"] = int(self.entry_bias_percent.get())
@@ -427,6 +440,7 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.entry_ms_min.delete(0, "end")
         self.entry_ms_min.insert(0, f"{value:.1f}")
         self.update_cps_display("min")
+        self.update_split_slider_bounds()
 
     def on_entry_min_changed(self, event):
         val_str = self.entry_ms_min.get()
@@ -435,6 +449,7 @@ class SilentClickerFrame(ctk.CTkFrame):
             if val > 0:
                 self.slider_ms_min.set(min(2000.0, max(1.0, val)))
                 self.update_cps_display("min")
+                self.update_split_slider_bounds()
         except ValueError:
             pass
 
@@ -448,6 +463,7 @@ class SilentClickerFrame(ctk.CTkFrame):
                 self.entry_ms_min.delete(0, "end")
                 self.entry_ms_min.insert(0, f"{ms:.1f}")
                 self.app.clear_warning()
+                self.update_split_slider_bounds()
         except ValueError:
             pass
 
@@ -456,6 +472,7 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.entry_ms_max.delete(0, "end")
         self.entry_ms_max.insert(0, f"{value:.1f}")
         self.update_cps_display("max")
+        self.update_split_slider_bounds()
 
     def on_entry_max_changed(self, event):
         val_str = self.entry_ms_max.get()
@@ -464,6 +481,7 @@ class SilentClickerFrame(ctk.CTkFrame):
             if val > 0:
                 self.slider_ms_max.set(min(2000.0, max(1.0, val)))
                 self.update_cps_display("max")
+                self.update_split_slider_bounds()
         except ValueError:
             pass
 
@@ -477,6 +495,7 @@ class SilentClickerFrame(ctk.CTkFrame):
                 self.entry_ms_max.delete(0, "end")
                 self.entry_ms_max.insert(0, f"{ms:.1f}")
                 self.app.clear_warning()
+                self.update_split_slider_bounds()
         except ValueError:
             pass
 
@@ -549,10 +568,45 @@ class SilentClickerFrame(ctk.CTkFrame):
 
     def on_bias_mode_changed(self, mode):
         t = self.app.settings_manager.get_text
-        if mode in [t("rand_biased"), "Biaisé (Triché)", "Biased (Cheated)", "Sesgado (Con trampa)"]:
+        if mode in [t("rand_biased"), "Pondéré", "Weighted", "Ponderado", "Biaisé (Triché)", "Biased (Cheated)", "Sesgado (Con trampa)"]:
             self.frame_biased_settings.grid(row=2, column=0, columnspan=5, padx=15, pady=4, sticky="ew")
         else:
             self.frame_biased_settings.grid_forget()
+
+    def update_split_slider_bounds(self):
+        try:
+            try:
+                min_val = float(self.entry_ms_min.get())
+            except ValueError:
+                min_val = 1.0
+            try:
+                max_val = float(self.entry_ms_max.get())
+            except ValueError:
+                max_val = 2000.0
+                
+            if min_val > max_val:
+                min_val, max_val = max_val, min_val
+                
+            # Update bounds of split slider
+            self.slider_bias_split.configure(from_=min_val, to=max_val)
+            
+            # Read current split value
+            try:
+                c_val = float(self.entry_bias_split.get())
+            except ValueError:
+                c_val = min_val + (max_val - min_val) / 2.0
+                
+            # Clamp current split point if it falls outside the new range
+            if c_val < min_val or c_val > max_val:
+                c_val = min_val + (max_val - min_val) / 2.0
+                self.slider_bias_split.set(c_val)
+                self.entry_bias_split.delete(0, "end")
+                self.entry_bias_split.insert(0, f"{c_val:.1f}")
+                self.update_cps_display("split")
+            else:
+                self.slider_bias_split.set(c_val)
+        except Exception as e:
+            print(f"Error updating split bounds: {e}")
 
     def on_stop_mode_changed(self, stop_text):
         t = self.app.settings_manager.get_text
@@ -638,15 +692,29 @@ class SilentClickerFrame(ctk.CTkFrame):
             
         # Parse Random distribution configs
         bias_val = self.btn_segmented_rand.get()
-        if bias_val in [t("rand_biased"), "Biaisé (Triché)", "Biased (Cheated)", "Sesgado (Con trampa)"]:
+        if bias_val in [t("rand_biased"), "Pondéré", "Weighted", "Ponderado", "Biaisé (Triché)", "Biased (Cheated)", "Sesgado (Con trampa)"]:
             self.engine.bias_mode = "biased"
             try:
                 split_val = float(self.entry_bias_split.get().strip())
                 percent_val = int(self.entry_bias_percent.get().strip())
+                
+                # Clamp split_val between min and max
+                min_val = self.engine.min_interval_ms
+                max_val = self.engine.max_interval_ms
+                if min_val > max_val:
+                    min_val, max_val = max_val, min_val
+                split_val = min(max_val, max(min_val, split_val))
+                
                 if split_val <= 0 or not (0 <= percent_val <= 100):
                     raise ValueError()
                 self.engine.bias_split_ms = split_val
                 self.engine.bias_percent = percent_val
+                
+                # Update UI to reflect clamped value
+                self.entry_bias_split.delete(0, "end")
+                self.entry_bias_split.insert(0, f"{split_val:.1f}")
+                self.slider_bias_split.set(split_val)
+                self.update_cps_display("split")
             except ValueError:
                 self.app.lbl_warning.configure(text=t("err_interval"))
                 return
