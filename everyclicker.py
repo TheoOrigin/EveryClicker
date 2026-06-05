@@ -17,7 +17,7 @@ class EveryClickerApp(ctk.CTk):
         
         # Configure global window
         self.title("EveryClicker | Mouse & Keyboard clicker")
-        self.geometry("690x680")
+        self.geometry("760x700")
         self.resizable(False, False)
         
         ctk.set_appearance_mode("dark")
