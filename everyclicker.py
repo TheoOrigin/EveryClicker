@@ -17,7 +17,7 @@ class EveryClickerApp(ctk.CTk):
         
         # Configure global window
         self.title("EveryClicker | Mouse & Keyboard clicker")
-        self.geometry("760x700")
+        super(ctk.CTk, self).geometry("")
         self.resizable(False, False)
         
         ctk.set_appearance_mode("dark")
@@ -40,6 +40,10 @@ class EveryClickerApp(ctk.CTk):
         
         # Sync values from settings
         self.sync_settings_to_ui()
+        
+        # Auto-size window on startup
+        self.update_idletasks()
+        super(ctk.CTk, self).geometry("")
         
         self.update_status_loop()
         
@@ -183,6 +187,10 @@ class EveryClickerApp(ctk.CTk):
             
         self.clear_warning()
         self.refresh_texts()
+        
+        # Auto-resize the window dynamically to fit the new page/module
+        self.update_idletasks()
+        super(ctk.CTk, self).geometry("")
 
     def on_language_changed(self, choice):
         if choice == "English":
