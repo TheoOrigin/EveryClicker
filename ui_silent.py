@@ -587,8 +587,14 @@ class SilentClickerFrame(ctk.CTkFrame):
             if min_val > max_val:
                 min_val, max_val = max_val, min_val
                 
+            # If min and max are equal (or extremely close), add a small range margin of 1.0 ms
+            # to prevent ZeroDivisionError (float division by zero) inside CustomTkinter CTkSlider
+            slider_max = max_val
+            if max_val - min_val < 0.001:
+                slider_max = min_val + 1.0
+                
             # Update bounds of split slider
-            self.slider_bias_split.configure(from_=min_val, to=max_val)
+            self.slider_bias_split.configure(from_=min_val, to=slider_max)
             
             # Read current split value
             try:
