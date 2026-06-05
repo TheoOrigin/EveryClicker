@@ -334,15 +334,15 @@ class SettingsManager:
         
         # Default settings
         self.data = {
-            "language": "fr",
+            "language": "en",  # Langue par défaut en Anglais
             "hotkey": 0x75,  # F6
             "clicker": {
                 "mode": "mouse",
                 "button": "left",
                 "double": False,
-                "keyboard_vk": 0x20,  # Space
-                "interval_ms": 100.0,
-                "stop_mode": "Infini",
+                "keyboard_vk": 69,  # Touche 'E' par défaut (code 69)
+                "interval_ms": 83.3,  # 12 CPS par défaut (1000ms / 12)
+                "stop_mode": "Infini",  # Durée infinie par défaut
                 "cycles": 100,
                 "duration_h": 0,
                 "duration_m": 10,
@@ -351,21 +351,48 @@ class SettingsManager:
             "presets": [
                 {
                     "name": "Minecraft Clicker (12 CPS)",
+                    "type": "clicker",
+                    "mode": "mouse",
+                    "button": "left",
+                    "double": False,
                     "interval_ms": 83.3,
                     "stop_mode": "Infini"
                 },
                 {
-                    "name": "Rapid Fire (100 CPS)",
+                    "name": "Auto Key E (10ms)",
+                    "type": "clicker",
+                    "mode": "keyboard",
+                    "keyboard_vk": 69,  # Touche E
                     "interval_ms": 10.0,
                     "stop_mode": "Infini"
                 },
                 {
-                    "name": "AFK Timer (5 min)",
-                    "interval_ms": 1000.0,
-                    "stop_mode": "Minuteur",
-                    "duration_h": 0,
-                    "duration_m": 5,
-                    "duration_s": 0
+                    "name": "Rapid Fire (100 CPS)",
+                    "type": "clicker",
+                    "mode": "mouse",
+                    "interval_ms": 10.0,
+                    "stop_mode": "Infini"
+                },
+                {
+                    "name": "Silent Mouse (10-100ms)",
+                    "type": "silent",
+                    "mode": "mouse",
+                    "button": "left",
+                    "double": False,
+                    "min_interval_ms": 10.0,
+                    "max_interval_ms": 100.0,
+                    "bias_mode": "uniform",
+                    "stop_mode": "Infini"
+                },
+                {
+                    "name": "Silent Key E (10-50ms)",
+                    "type": "silent",
+                    "mode": "keyboard",
+                    "keyboard_vk": 69,
+                    "min_interval_ms": 10.0,
+                    "max_interval_ms": 50.0,
+                    "bias_mode": "uniform",
+                    "stop_mode": "Infini"
                 }
             ],
             "macros": {},
@@ -373,14 +400,14 @@ class SettingsManager:
                 "mode": "mouse",
                 "button": "left",
                 "double": False,
-                "keyboard_vk": 0x20,
+                "keyboard_vk": 69,
                 "min_interval_ms": 10.0,
                 "max_interval_ms": 100.0,
                 "bias_mode": "uniform",
                 "bias_split_ms": 70.0,
                 "bias_percent": 70,
                 "bias_direction": "above",
-                "stop_mode": "Infini",
+                "stop_mode": "Infini",  # Mode silencieux infini par défaut
                 "cycles": 100,
                 "duration_h": 0,
                 "duration_m": 10,

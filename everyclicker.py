@@ -1,6 +1,8 @@
+import os
 import tkinter as tk
 import customtkinter as ctk
 import time
+from PIL import Image
 from settings import SettingsManager, get_key_name
 from hotkey import GlobalHotkeyManager
 from engine import ClickerEngine, MacroEngine
@@ -20,6 +22,14 @@ class EveryClickerApp(ctk.CTk):
         self.geometry("740x670")
         self.resizable(True, True)
         self.minsize(740, 670)
+        try:
+            if os.path.exists("logo.ico"):
+                self.iconbitmap("logo.ico")
+            elif os.path.exists("logo.png"):
+                self.icon_photo = tk.PhotoImage(file="logo.png")
+                self.iconphoto(False, self.icon_photo)
+        except Exception as e:
+            print(f"Impossible de charger l'icône de l'application : {e}")
         
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
