@@ -218,12 +218,14 @@ class ClickerFrame(ctk.CTkFrame):
     # Presets management
     def refresh_presets_combo(self):
         presets = self.app.settings_manager.get_presets()
-        names = [p["name"] for p in presets]
+        current_mode = self.engine.mode
+        filtered = [p for p in presets if p.get("mode", "mouse") == current_mode]
+        names = [p["name"] for p in filtered]
         t = self.app.settings_manager.get_text
         names.append(t("new_item"))
         self.combo_presets.configure(values=names)
-        if presets:
-            self.combo_presets.set(presets[0]["name"])
+        if filtered:
+            self.combo_presets.set(filtered[0]["name"])
         else:
             self.combo_presets.set("")
 
@@ -236,6 +238,16 @@ class ClickerFrame(ctk.CTkFrame):
         presets = self.app.settings_manager.get_presets()
         preset = next((p for p in presets if p["name"] == name), None)
         if preset:
+            # Load target configs
+            if self.engine.mode == "mouse":
+                self.engine.mouse_button = preset.get("button", "left")
+                self.combo_button.set(t(self.engine.mouse_button))
+                self.engine.mouse_double = preset.get("double", False)
+                self.combo_click_type.set(t("double") if self.engine.mouse_double else t("single"))
+            else:
+                self.engine.keyboard_vk = preset.get("keyboard_vk", 0x20)
+                self.lbl_target_key_display.configure(text=get_key_name(self.engine.keyboard_vk))
+
             # Set interval
             self.engine.interval_ms = preset.get("interval_ms", 100.0)
             self.slider_ms.set(self.engine.interval_ms)
@@ -279,7 +291,14 @@ class ClickerFrame(ctk.CTkFrame):
         preset_dict = {
             "name": name,
             "interval_ms": self.engine.interval_ms,
+            "mode": self.engine.mode,
         }
+        if self.engine.mode == "mouse":
+            preset_dict["button"] = self.engine.mouse_button
+            preset_dict["double"] = self.engine.mouse_double
+        else:
+            preset_dict["keyboard_vk"] = self.engine.keyboard_vk
+
         # Add stop mode configurations
         stop_val = self.btn_segmented_stop.get()
         if stop_val in [t("stop_infinite"), "Infini", "Infinite", "Infinito"]:
@@ -311,7 +330,8 @@ class ClickerFrame(ctk.CTkFrame):
 
     def on_delete_preset_clicked(self):
         name = self.combo_presets.get()
-        if name:
+        t = self.app.settings_manager.get_text
+        if name and name != t("new_item"):
             self.app.settings_manager.delete_preset(name)
             self.refresh_presets_combo()
 
@@ -328,6 +348,7 @@ class ClickerFrame(ctk.CTkFrame):
             self.frame_keyboard.grid(row=2, column=0, columnspan=2, padx=15, pady=(3, 8), sticky="ew")
             self.engine.mode = "keyboard"
             self.app.check_key_conflicts(self.engine.keyboard_vk, self.app.hotkey_manager.vk)
+        self.refresh_presets_combo()
 
     def on_mouse_config_changed(self, val=None):
         t = self.app.settings_manager.get_text
