@@ -86,10 +86,6 @@ class ui_macro_frame(ctk.CTkFrame):
         self.combo_macros = ctk.CTkComboBox(self.card_save, values=[], width=280, command=self.on_macro_selected)
         self.combo_macros.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="w")
         
-        # New Inline Macro Input widgets (initially hidden)
-        self.entry_macro_name = ctk.CTkEntry(self.card_save, width=220, placeholder_text="Macro")
-        self.btn_cancel_macro = ctk.CTkButton(self.card_save, text="X", width=50, fg_color="#7f8c8d", hover_color="#5d6d7e", command=self.hide_new_macro_input)
-        
         self.btn_save_macro = ctk.CTkButton(self.card_save, text="Sauvegarder", width=135, fg_color="#27ae60", hover_color="#219653", command=self.on_save_macro_clicked)
         self.btn_save_macro.grid(row=2, column=1, padx=5, pady=(0, 5), sticky="w")
         
@@ -180,20 +176,13 @@ class ui_macro_frame(ctk.CTkFrame):
     def refresh_macros_combo(self):
         macros = self.app.settings_manager.get_macros()
         names = list(macros.keys())
-        t = self.app.settings_manager.get_text
-        names.append(t("new_item"))
         self.combo_macros.configure(values=names)
-        if macros:
-            self.combo_macros.set(list(macros.keys())[0])
+        if names:
+            self.combo_macros.set(names[0])
         else:
             self.combo_macros.set("")
 
     def on_macro_selected(self, name):
-        t = self.app.settings_manager.get_text
-        if name == t("new_item"):
-            self.show_new_macro_input()
-            return
-            
         macros = self.app.settings_manager.get_macros()
         macro = macros.get(name, [])
         if macro:
@@ -207,29 +196,17 @@ class ui_macro_frame(ctk.CTkFrame):
             self.app.lbl_warning.configure(text=t("macro_err_no_actions"))
             return
             
-        if self.entry_macro_name.winfo_viewable():
-            name = self.entry_macro_name.get().strip()
-            if not name or name == t("new_item"):
-                self.app.lbl_warning.configure(text=t("macro_err_name_empty"))
-                return
-        else:
-            name = self.combo_macros.get()
-            if not name or name == t("new_item"):
-                self.show_new_macro_input()
-                return
-                
-        self.app.settings_manager.add_macro(name, self.recorded_events)
-        self.app.clear_warning()
-        self.refresh_macros_combo()
-        self.combo_macros.set(name)
-        
-        if self.entry_macro_name.winfo_viewable():
-            self.hide_new_macro_input()
+        dialog = ctk.CTkInputDialog(text=t("macro_lbl_macro_name"), title="Macro")
+        name = dialog.get_input()
+        if name:
+            self.app.settings_manager.add_macro(name, self.recorded_events)
+            self.app.clear_warning()
+            self.refresh_macros_combo()
+            self.combo_macros.set(name)
 
     def on_delete_macro_clicked(self):
         name = self.combo_macros.get()
-        t = self.app.settings_manager.get_text
-        if name and name != t("new_item"):
+        if name:
             self.app.settings_manager.delete_macro(name)
             self.recorded_events = []
             self.engine.actions = []
@@ -374,23 +351,3 @@ class ui_macro_frame(ctk.CTkFrame):
         self.entry_fixed_ms.configure(state=state)
         self.btn_segmented_stop.configure(state=state)
         self.entry_cycles.configure(state=state)
-        self.entry_macro_name.configure(state=state)
-        self.btn_cancel_macro.configure(state=state)
-
-    def show_new_macro_input(self):
-        self.combo_macros.grid_forget()
-        self.entry_macro_name.grid(row=1, column=1, padx=5, pady=4, sticky="w")
-        self.btn_cancel_macro.grid(row=1, column=2, padx=5, pady=4, sticky="w")
-        self.entry_macro_name.delete(0, "end")
-        self.entry_macro_name.insert(0, "")
-        self.entry_macro_name.focus()
-
-    def hide_new_macro_input(self):
-        self.entry_macro_name.grid_forget()
-        self.btn_cancel_macro.grid_forget()
-        self.combo_macros.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="w")
-        macros = self.app.settings_manager.get_macros()
-        if macros:
-            self.combo_macros.set(list(macros.keys())[0])
-        else:
-            self.combo_macros.set("")

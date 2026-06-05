@@ -394,6 +394,7 @@ class ClickerFrame(ctk.CTkFrame):
         return False
 
     def start_clicker(self):
+        self.engine.random_mode = False
         t = self.app.settings_manager.get_text
         stop_val = self.btn_segmented_stop.get()
         

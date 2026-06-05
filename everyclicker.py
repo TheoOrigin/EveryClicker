@@ -5,6 +5,7 @@ from settings import SettingsManager, get_key_name
 from hotkey import GlobalHotkeyManager
 from engine import ClickerEngine, MacroEngine
 from ui_clicker import ClickerFrame
+from ui_silent import SilentClickerFrame
 from ui_macro import ui_macro_frame
 
 class EveryClickerApp(ctk.CTk):
@@ -63,6 +64,9 @@ class EveryClickerApp(ctk.CTk):
         self.btn_nav_clicker = ctk.CTkButton(self.sidebar_frame, text="Clicker", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), command=lambda: self.select_page("clicker"))
         self.btn_nav_clicker.pack(pady=6, padx=20, fill="x")
         
+        self.btn_nav_silent = ctk.CTkButton(self.sidebar_frame, text="Silencieux", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), command=lambda: self.select_page("silent"))
+        self.btn_nav_silent.pack(pady=6, padx=20, fill="x")
+        
         self.btn_nav_macro = ctk.CTkButton(self.sidebar_frame, text="Macros", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), command=lambda: self.select_page("macro"))
         self.btn_nav_macro.pack(pady=6, padx=20, fill="x")
         
@@ -115,6 +119,7 @@ class EveryClickerApp(ctk.CTk):
         self.pages_container.pack(side="top", fill="both", expand=True, pady=(5, 0))
         
         self.clicker_frame = ClickerFrame(self.pages_container, self)
+        self.silent_frame = SilentClickerFrame(self.pages_container, self)
         self.macro_frame = ui_macro_frame(self.pages_container, self)
         
         # Default view
@@ -153,14 +158,26 @@ class EveryClickerApp(ctk.CTk):
     def select_page(self, page_name):
         if page_name == "clicker":
             self.btn_nav_clicker.configure(fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"])
+            self.btn_nav_silent.configure(fg_color="transparent")
             self.btn_nav_macro.configure(fg_color="transparent")
             self.macro_frame.pack_forget()
+            self.silent_frame.pack_forget()
             self.clicker_frame.pack(fill="both", expand=True, padx=10, pady=5)
             self.active_tab = "clicker"
+        elif page_name == "silent":
+            self.btn_nav_clicker.configure(fg_color="transparent")
+            self.btn_nav_silent.configure(fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"])
+            self.btn_nav_macro.configure(fg_color="transparent")
+            self.clicker_frame.pack_forget()
+            self.macro_frame.pack_forget()
+            self.silent_frame.pack(fill="both", expand=True, padx=10, pady=5)
+            self.active_tab = "silent"
         else:
             self.btn_nav_clicker.configure(fg_color="transparent")
+            self.btn_nav_silent.configure(fg_color="transparent")
             self.btn_nav_macro.configure(fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"])
             self.clicker_frame.pack_forget()
+            self.silent_frame.pack_forget()
             self.macro_frame.pack(fill="both", expand=True, padx=10, pady=5)
             self.active_tab = "macro"
             
@@ -177,6 +194,7 @@ class EveryClickerApp(ctk.CTk):
             
         self.refresh_texts()
         self.clicker_frame.refresh_texts()
+        self.silent_frame.refresh_texts()
         self.macro_frame.refresh_texts()
 
     def refresh_texts(self):
@@ -185,6 +203,7 @@ class EveryClickerApp(ctk.CTk):
         # Main labels
         self.lbl_subtitle.configure(text=t("subtitle"))
         self.btn_nav_clicker.configure(text=t("tab_clicker"))
+        self.btn_nav_silent.configure(text=t("tab_silent"))
         self.btn_nav_macro.configure(text=t("tab_macro"))
         
         self.lbl_sec_hotkey.configure(text=t("sec_hotkey"))
@@ -252,6 +271,11 @@ class EveryClickerApp(ctk.CTk):
                 self.engine.stop()
             else:
                 self.clicker_frame.start_clicker()
+        elif self.active_tab == "silent":
+            if self.engine.active:
+                self.engine.stop()
+            else:
+                self.silent_frame.start_clicker()
         else:
             if self.macro_engine.active:
                 self.macro_engine.stop()
@@ -303,12 +327,15 @@ class EveryClickerApp(ctk.CTk):
             
             # Lock Navigation and main config options
             self.btn_nav_clicker.configure(state="disabled")
+            self.btn_nav_silent.configure(state="disabled")
             self.btn_nav_macro.configure(state="disabled")
             self.combo_lang.configure(state="disabled")
             self.btn_change_hotkey.configure(state="disabled")
             
             if self.active_tab == "clicker":
                 self.clicker_frame.disable_inputs(True)
+            elif self.active_tab == "silent":
+                self.silent_frame.disable_inputs(True)
             else:
                 self.macro_frame.disable_inputs(True)
         else:
@@ -318,11 +345,13 @@ class EveryClickerApp(ctk.CTk):
             
             # Unlock Nav
             self.btn_nav_clicker.configure(state="normal")
+            self.btn_nav_silent.configure(state="normal")
             self.btn_nav_macro.configure(state="normal")
             self.combo_lang.configure(state="normal")
             self.btn_change_hotkey.configure(state="normal")
             
             self.clicker_frame.disable_inputs(False)
+            self.silent_frame.disable_inputs(False)
             self.macro_frame.disable_inputs(False)
 
     def _format_time(self, seconds):
@@ -341,7 +370,7 @@ class EveryClickerApp(ctk.CTk):
     def update_status_loop(self):
         t = self.settings_manager.get_text
         
-        if self.active_tab == "clicker":
+        if self.active_tab == "clicker" or self.active_tab == "silent":
             if self.engine.active:
                 if self.engine.duration_sec is not None:
                     elapsed = time.perf_counter() - self.engine.start_perf_time
@@ -352,7 +381,10 @@ class EveryClickerApp(ctk.CTk):
                     rem_clicks = max(0, self.engine.max_clicks - self.engine.click_count)
                     self.lbl_status.configure(text=t("status_active_cycles", cycles=rem_clicks))
                 else:
-                    self.lbl_status.configure(text=t("status_active_inf"))
+                    if self.active_tab == "silent":
+                        self.lbl_status.configure(text=t("status_active_silent"))
+                    else:
+                        self.lbl_status.configure(text=t("status_active_inf"))
             else:
                 self.lbl_status.configure(text=t("status_inactive"))
                 
@@ -380,6 +412,10 @@ class EveryClickerApp(ctk.CTk):
             "keyboard_vk": self.engine.keyboard_vk
         }
         self.settings_manager.data["clicker"] = click_cfg
+        
+        # Save silent configs
+        self.silent_frame.save_settings()
+        
         self.settings_manager.save()
         
         self.engine.stop()
