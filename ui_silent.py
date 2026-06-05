@@ -13,6 +13,7 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.create_widgets()
         self.refresh_texts()
         self.load_settings()
+        self.refresh_presets_combo()
 
     def create_widgets(self):
         # -----------------------------------------
@@ -51,6 +52,32 @@ class SilentClickerFrame(ctk.CTkFrame):
         
         self.btn_record_target_key = ctk.CTkButton(self.frame_keyboard, text="Modifier", command=self.start_recording_target_key, width=120)
         self.btn_record_target_key.grid(row=0, column=2, padx=15, pady=3, sticky="w")
+
+        # -----------------------------------------
+        # Card 1.5: Presets (NEW FEATURE)
+        # -----------------------------------------
+        self.card_presets = ctk.CTkFrame(self)
+        self.card_presets.pack(pady=4, fill="x", padx=15)
+        
+        self.lbl_sec_presets = ctk.CTkLabel(self.card_presets, text="", font=ctk.CTkFont(size=12, weight="bold"), text_color="#3498db")
+        self.lbl_sec_presets.grid(row=0, column=0, columnspan=3, padx=15, pady=(5, 2), sticky="w")
+        
+        self.lbl_preset_sel = ctk.CTkLabel(self.card_presets, text="Preset:")
+        self.lbl_preset_sel.grid(row=1, column=0, padx=(15, 8), pady=4, sticky="w")
+        
+        self.combo_presets = ctk.CTkComboBox(self.card_presets, values=[], width=280, command=self.on_preset_selected)
+        self.combo_presets.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="w")
+        self.combo_presets._entry.bind("<Escape>", lambda e: self.hide_new_preset_input())
+        
+        # New Inline Preset Input widgets (initially hidden)
+        self.entry_preset_name = ctk.CTkEntry(self.card_presets, width=220, placeholder_text="Preset")
+        self.btn_cancel_preset = ctk.CTkButton(self.card_presets, text="X", width=50, fg_color="#7f8c8d", hover_color="#5d6d7e", command=self.hide_new_preset_input)
+        
+        self.btn_save_preset = ctk.CTkButton(self.card_presets, text="Enregistrer", width=135, fg_color="#27ae60", hover_color="#219653", command=self.on_save_preset_clicked)
+        self.btn_save_preset.grid(row=2, column=1, padx=5, pady=(0, 5), sticky="w")
+        
+        self.btn_del_preset = ctk.CTkButton(self.card_presets, text="Supprimer", width=135, fg_color="#c0392b", hover_color="#962d22", command=self.on_delete_preset_clicked)
+        self.btn_del_preset.grid(row=2, column=2, padx=5, pady=(0, 5), sticky="w")
 
         # -----------------------------------------
         # Card 2: Intervalle Minimum (A)
@@ -257,6 +284,11 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.lbl_cycles_title.configure(text=t("lbl_cycles"))
         self.lbl_cycles_unit.configure(text=t("lbl_cycles_unit"))
         self.lbl_timer_dur.configure(text=t("lbl_timer"))
+        
+        self.lbl_sec_presets.configure(text=t("sec_presets"))
+        self.lbl_preset_sel.configure(text=t("lbl_preset"))
+        self.btn_save_preset.configure(text=t("btn_save_preset"))
+        self.btn_del_preset.configure(text=t("btn_del_preset"))
 
     def load_settings(self):
         cfg = self.app.settings_manager.data.get("silent", {})
@@ -421,6 +453,7 @@ class SilentClickerFrame(ctk.CTkFrame):
             self.frame_keyboard.grid(row=2, column=0, columnspan=2, padx=15, pady=(3, 8), sticky="ew")
             self.engine.mode = "keyboard"
             self.app.check_key_conflicts(self.engine.keyboard_vk, self.app.hotkey_manager.vk)
+        self.refresh_presets_combo()
 
     def on_mouse_config_changed(self, val=None):
         t = self.app.settings_manager.get_text
@@ -756,6 +789,11 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.combo_button.configure(state=state)
         self.combo_click_type.configure(state=state)
         self.btn_record_target_key.configure(state=state)
+        self.combo_presets.configure(state=state)
+        self.btn_save_preset.configure(state=state)
+        self.btn_del_preset.configure(state=state)
+        self.entry_preset_name.configure(state=state)
+        self.btn_cancel_preset.configure(state=state)
         self.entry_ms_min.configure(state=state)
         self.slider_ms_min.configure(state=state)
         self.entry_cps_min.configure(state=state)
@@ -774,3 +812,204 @@ class SilentClickerFrame(ctk.CTkFrame):
         self.entry_hours.configure(state=state)
         self.entry_minutes.configure(state=state)
         self.entry_seconds.configure(state=state)
+
+    def refresh_presets_combo(self):
+        presets = self.app.settings_manager.get_presets()
+        current_mode = "mouse" if self.btn_segmented_mode.get() in [self.app.settings_manager.get_text("mouse"), "Souris", "Mouse", "Ratón"] else "keyboard"
+        filtered = [p for p in presets if p.get("type") == "silent" and p.get("mode", "mouse") == current_mode]
+        names = [p["name"] for p in filtered]
+        t = self.app.settings_manager.get_text
+        names.append(t("new_item"))
+        self.combo_presets.configure(values=names)
+        if filtered:
+            self.combo_presets.set(filtered[0]["name"])
+        else:
+            self.combo_presets.set("")
+
+    def on_preset_selected(self, name):
+        t = self.app.settings_manager.get_text
+        if name == t("new_item"):
+            self.show_new_preset_input()
+            return
+            
+        presets = self.app.settings_manager.get_presets()
+        preset = next((p for p in presets if p["name"] == name and p.get("type") == "silent"), None)
+        if preset:
+            # Load targets
+            if preset.get("mode", "mouse") == "mouse":
+                self.btn_segmented_mode.set(t("mouse"))
+                self.combo_button.set(t(preset.get("button", "left")))
+                self.combo_click_type.set(t("double") if preset.get("double", False) else t("single"))
+            else:
+                self.btn_segmented_mode.set(t("keyboard"))
+                self.engine.keyboard_vk = preset.get("keyboard_vk", 0x20)
+                self.lbl_target_key_display.configure(text=get_key_name(self.engine.keyboard_vk))
+            self.on_mode_changed(self.btn_segmented_mode.get())
+            
+            # Load intervals
+            min_ms = preset.get("min_interval_ms", 10.0)
+            self.slider_ms_min.set(min_ms)
+            self.entry_ms_min.delete(0, "end")
+            self.entry_ms_min.insert(0, f"{min_ms:.1f}")
+            self.update_cps_display("min")
+            
+            max_ms = preset.get("max_interval_ms", 100.0)
+            self.slider_ms_max.set(max_ms)
+            self.entry_ms_max.delete(0, "end")
+            self.entry_ms_max.insert(0, f"{max_ms:.1f}")
+            self.update_cps_display("max")
+            
+            # Load random settings
+            bias_mode = preset.get("bias_mode", "uniform")
+            self.btn_segmented_rand.set(t("rand_uniform") if bias_mode == "uniform" else t("rand_biased"))
+            self.on_bias_mode_changed(self.btn_segmented_rand.get())
+            
+            split_ms = preset.get("bias_split_ms", 70.0)
+            self.slider_bias_split.set(split_ms)
+            self.entry_bias_split.delete(0, "end")
+            self.entry_bias_split.insert(0, f"{split_ms:.1f}")
+            self.update_cps_display("split")
+            
+            percent = preset.get("bias_percent", 70)
+            self.slider_bias_percent.set(percent)
+            self.entry_bias_percent.delete(0, "end")
+            self.entry_bias_percent.insert(0, str(percent))
+            
+            direction = preset.get("bias_direction", "above")
+            self.btn_segmented_dir.set(t("bias_above") if direction == "above" else t("bias_below"))
+            
+            self.update_split_slider_bounds()
+            
+            # Load stop modes
+            stop_mode = preset.get("stop_mode", "Infini")
+            if stop_mode == "Infini":
+                self.btn_segmented_stop.set(t("stop_infinite"))
+            elif stop_mode == "Cycles":
+                self.btn_segmented_stop.set(t("stop_cycles"))
+                self.entry_cycles.delete(0, "end")
+                self.entry_cycles.insert(0, str(preset.get("cycles", 100)))
+            else:
+                self.btn_segmented_stop.set(t("stop_timer"))
+                self.entry_hours.delete(0, "end")
+                self.entry_hours.insert(0, str(preset.get("duration_h", 0)))
+                self.entry_minutes.delete(0, "end")
+                self.entry_minutes.insert(0, str(preset.get("duration_m", 10)))
+                self.entry_seconds.delete(0, "end")
+                self.entry_seconds.insert(0, str(preset.get("duration_s", 0)))
+                
+            self.on_stop_mode_changed(self.btn_segmented_stop.get())
+
+    def on_save_preset_clicked(self):
+        t = self.app.settings_manager.get_text
+        
+        if self.entry_preset_name.winfo_viewable():
+            name = self.entry_preset_name.get().strip()
+            if not name or name == t("new_item"):
+                self.app.lbl_warning.configure(text=t("macro_err_name_empty"))
+                return
+        else:
+            name = self.combo_presets.get()
+            if not name or name == t("new_item"):
+                self.show_new_preset_input()
+                return
+                
+        current_mode = "mouse" if self.btn_segmented_mode.get() in [t("mouse"), "Souris", "Mouse", "Ratón"] else "keyboard"
+        
+        preset_dict = {
+            "name": name,
+            "type": "silent",
+            "mode": current_mode,
+        }
+        
+        if current_mode == "mouse":
+            btn = self.combo_button.get()
+            if btn in [t("left"), "Gauche", "Left", "Izquierda"]:
+                preset_dict["button"] = "left"
+            elif btn in [t("right"), "Droit", "Right", "Derecha"]:
+                preset_dict["button"] = "right"
+            else:
+                preset_dict["button"] = "middle"
+            preset_dict["double"] = (self.combo_click_type.get() in [t("double"), "Double"])
+        else:
+            preset_dict["keyboard_vk"] = self.engine.keyboard_vk
+            
+        try:
+            preset_dict["min_interval_ms"] = float(self.entry_ms_min.get())
+        except:
+            preset_dict["min_interval_ms"] = 10.0
+            
+        try:
+            preset_dict["max_interval_ms"] = float(self.entry_ms_max.get())
+        except:
+            preset_dict["max_interval_ms"] = 100.0
+            
+        preset_dict["bias_mode"] = "uniform" if self.btn_segmented_rand.get() in [t("rand_uniform"), "Totalement Aléatoire", "Fully Random", "Totalmente Aleatorio"] else "biased"
+        
+        try:
+            split_val = float(self.entry_bias_split.get())
+        except:
+            split_val = 70.0
+            
+        # Clamp split_val
+        min_ms = preset_dict["min_interval_ms"]
+        max_ms = preset_dict["max_interval_ms"]
+        if min_ms > max_ms:
+            min_ms, max_ms = max_ms, min_ms
+        split_val = min(max_ms, max(min_ms, split_val))
+        preset_dict["bias_split_ms"] = split_val
+        
+        try:
+            preset_dict["bias_percent"] = int(self.entry_bias_percent.get())
+        except:
+            preset_dict["bias_percent"] = 70
+            
+        preset_dict["bias_direction"] = "above" if self.btn_segmented_dir.get() in [t("bias_above"), "Au-dessus", "Above", "Por encima del límite", "Au-dessus du seuil"] else "below"
+        
+        stop_val = self.btn_segmented_stop.get()
+        if stop_val in [t("stop_infinite"), "Infini", "Infinite", "Infinito"]:
+            preset_dict["stop_mode"] = "Infini"
+        elif stop_val in [t("stop_cycles"), "Cycles", "Ciclos"]:
+            preset_dict["stop_mode"] = "Cycles"
+            try:
+                preset_dict["cycles"] = int(self.entry_cycles.get())
+            except:
+                preset_dict["cycles"] = 100
+        else:
+            preset_dict["stop_mode"] = "Minuteur"
+            try:
+                preset_dict["duration_h"] = int(self.entry_hours.get())
+                preset_dict["duration_m"] = int(self.entry_minutes.get())
+                preset_dict["duration_s"] = int(self.entry_seconds.get())
+            except:
+                preset_dict["duration_h"] = 0
+                preset_dict["duration_m"] = 10
+                preset_dict["duration_s"] = 0
+                
+        self.app.settings_manager.add_preset(preset_dict)
+        self.app.clear_warning()
+        self.refresh_presets_combo()
+        self.combo_presets.set(name)
+        
+        if self.entry_preset_name.winfo_viewable():
+            self.hide_new_preset_input()
+
+    def on_delete_preset_clicked(self):
+        name = self.combo_presets.get()
+        t = self.app.settings_manager.get_text
+        if name and name != t("new_item"):
+            self.app.settings_manager.delete_preset(name)
+            self.refresh_presets_combo()
+
+    def show_new_preset_input(self):
+        self.combo_presets.grid_forget()
+        self.entry_preset_name.grid(row=1, column=1, padx=5, pady=4, sticky="w")
+        self.btn_cancel_preset.grid(row=1, column=2, padx=5, pady=4, sticky="w")
+        self.entry_preset_name.delete(0, "end")
+        self.entry_preset_name.insert(0, "")
+        self.entry_preset_name.focus()
+
+    def hide_new_preset_input(self):
+        self.entry_preset_name.grid_forget()
+        self.btn_cancel_preset.grid_forget()
+        self.combo_presets.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="w")
+        self.refresh_presets_combo()

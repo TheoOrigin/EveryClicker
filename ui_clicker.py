@@ -219,7 +219,7 @@ class ClickerFrame(ctk.CTkFrame):
     def refresh_presets_combo(self):
         presets = self.app.settings_manager.get_presets()
         current_mode = self.engine.mode
-        filtered = [p for p in presets if p.get("mode", "mouse") == current_mode]
+        filtered = [p for p in presets if p.get("type", "clicker") == "clicker" and p.get("mode", "mouse") == current_mode]
         names = [p["name"] for p in filtered]
         t = self.app.settings_manager.get_text
         names.append(t("new_item"))
@@ -236,7 +236,7 @@ class ClickerFrame(ctk.CTkFrame):
             return
             
         presets = self.app.settings_manager.get_presets()
-        preset = next((p for p in presets if p["name"] == name), None)
+        preset = next((p for p in presets if p["name"] == name and p.get("type", "clicker") == "clicker"), None)
         if preset:
             # Load target configs
             if self.engine.mode == "mouse":
@@ -290,6 +290,7 @@ class ClickerFrame(ctk.CTkFrame):
                 
         preset_dict = {
             "name": name,
+            "type": "clicker",
             "interval_ms": self.engine.interval_ms,
             "mode": self.engine.mode,
         }
