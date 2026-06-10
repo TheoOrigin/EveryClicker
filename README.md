@@ -38,12 +38,7 @@
 
 ## 🛠️ Installation & Setup
 
-### Option A: Standalone Executable (Recommended)
-You do not need Python installed to run the application. Simply download the standalone executable:
-1. Go to the `dist/` directory or download `everyclicker.exe`.
-2. Double-click to run!
-
-### Option B: Run from Source Code
+### Run from Source Code
 1. Clone this repository:
    ```bash
    git clone https://github.com/TheoOrigin/EveryClicker.git
